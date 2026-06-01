@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Logistics Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0a0f0d;
+    --bg2: #111714;
+    --bg3: #181f1b;
+    --bg4: #1e2822;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8f0eb;
+    --text2: #8fa898;
+    --text3: #5a7066;
+    --green: #1D9E75;
+    --green2: #5DCAA5;
+    --green3: #9FE1CB;
+    --amber: #BA7517;
+    --amber2: #EF9F27;
+    --red: #D85A30;
+    --red2: #F09595;
+    --blue: #378ADD;
+    --blue2: #85B7EB;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Sidebar ─── */
+  .layout { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: var(--green);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon i { color: #fff; font-size: 18px; }
+  .logo-text { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+  .logo-sub { font-size: 10px; color: var(--text3); }
+
+  .nav-section { padding: 0 12px; margin-bottom: 8px; }
+  .nav-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 8px; margin-bottom: 6px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13px;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item i { font-size: 17px; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(29,158,117,0.12); color: var(--green2); }
+  .nav-item.active i { color: var(--green); }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: #fff;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .nav-badge.green { background: var(--green); }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px 12px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .system-status {
+    background: rgba(29,158,117,0.08);
+    border: 1px solid rgba(29,158,117,0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .sys-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .sys-row:last-child { margin-bottom: 0; }
+  .sys-label { font-size: 11px; color: var(--text3); }
+  .sys-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .sys-dot.warn { background: var(--amber2); }
+
+  /* ─── Main ─── */
+  .main { flex: 1; overflow: auto; }
+
+  /* ─── Topbar ─── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .page-title { font-size: 16px; font-weight: 500; color: var(--text); }
+  .page-sub { font-size: 12px; color: var(--text3); }
+
+  .status-badge {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(29,158,117,0.1);
+    border: 1px solid rgba(29,158,117,0.25);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px; color: var(--green2);
+  }
+  .pulse {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: var(--bg2);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text2);
+    font-size: 17px; transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--bg3); color: var(--text); }
+  .icon-btn.notif { position: relative; }
+  .notif-dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--red);
+    border: 1px solid var(--bg);
+  }
+
+  .time-select {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 8px; color: var(--text); font-family: var(--font);
+    font-size: 12px; padding: 6px 12px; cursor: pointer; outline: none;
+  }
+
+  /* ─── Content ─── */
+  .content { padding: 24px 28px; }
+
+  /* ─── KPI Strip ─── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .kpi {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .kpi:hover { border-color: var(--border2); }
+  .kpi-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 500; color: var(--text); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .kpi-sub { font-size: 11px; display: flex; align-items: center; gap: 3px; }
+  .kpi-sub.up { color: var(--green2); }
+  .kpi-sub.down { color: var(--red); }
+  .kpi-sub.warn { color: var(--amber2); }
+  .kpi-sub.neutral { color: var(--text3); }
+
+  /* ─── Section heading ─── */
+  .section-heading {
+    font-size: 11px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 12px; margin-top: 24px;
+  }
+
+  /* ─── Grid layouts ─── */
+  .grid-2-1 { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr); gap: 14px; margin-bottom: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 14px; }
+
+  /* ─── Cards ─── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 500; color: var(--text);
+  }
+  .card-title i { font-size: 16px; color: var(--green); }
+  .card-action {
+    font-size: 11px; color: var(--green2); cursor: pointer;
+    padding: 4px 10px; border: 1px solid rgba(93,202,165,0.25);
+    border-radius: 6px; transition: all 0.15s;
+    background: none;
+    font-family: var(--font);
+  }
+  .card-action:hover { background: rgba(93,202,165,0.08); }
+
+  /* ─── Demand Forecast Chart ─── */
+  .chart-wrap { position: relative; width: 100%; height: 220px; }
+
+  .chart-legend {
+    display: flex; gap: 16px; margin-bottom: 12px;
+    font-size: 11px; color: var(--text3);
+  }
+  .leg { display: flex; align-items: center; gap: 5px; }
+  .leg-sq { width: 10px; height: 3px; border-radius: 2px; }
+  .leg-sq.dashed { background: repeating-linear-gradient(90deg, #5DCAA5 0, #5DCAA5 4px, transparent 4px, transparent 7px); height: 2px; }
+
+  /* ─── Shipment Table ─── */
+  .ship-table { width: 100%; border-collapse: collapse; }
+  .ship-table th {
+    font-size: 10px; color: var(--text3);
+    text-align: left; padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 400;
+  }
+  .ship-table td { padding: 10px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .ship-table tr:last-child td { border-bottom: none; }
+  .ship-table tr:hover td { background: var(--bg3); }
+  .ship-id { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+  .route { color: var(--text); }
+  .eta { color: var(--text2); font-family: var(--mono); font-size: 11px; }
+  .conf { font-family: var(--mono); font-size: 11px; }
+  .conf.hi { color: var(--green2); }
+  .conf.med { color: var(--amber2); }
+
+  .badge {
+    font-size: 10px; font-weight: 500;
+    padding: 3px 9px; border-radius: 20px;
+    display: inline-block;
+  }
+  .badge-ok { background: rgba(29,158,117,0.15); color: var(--green2); border: 1px solid rgba(29,158,117,0.2); }
+  .badge-warn { background: rgba(186,117,23,0.15); color: var(--amber2); border: 1px solid rgba(186,117,23,0.2); }
+  .badge-late { background: rgba(216,90,48,0.15); color: var(--red2); border: 1px solid rgba(216,90,48,0.2); }
+  .badge-transit { background: rgba(55,138,221,0.12); color: var(--blue2); border: 1px solid rgba(55,138,221,0.2); }
+
+  /* ─── Supplier Risk ─── */
+  .sup-list { display: flex; flex-direction: column; gap: 12px; }
+  .sup-row { display: flex; align-items: center; gap: 10px; }
+  .sup-name { font-size: 12px; color: var(--text); width: 90px; flex-shrink: 0; }
+  .risk-bar-bg { flex: 1; height: 5px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+  .risk-bar { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .risk-low { background: var(--green); }
+  .risk-med { background: var(--amber2); }
+  .risk-high { background: var(--red); }
+  .sup-pct { font-size: 11px; color: var(--text3); font-family: var(--mono); width: 32px; text-align: right; }
+  .sup-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; width: 46px; text-align: center; }
+  .sup-badge.low { background: rgba(29,158,117,0.12); color: var(--green2); }
+  .sup-badge.med { background: rgba(186,117,23,0.12); color: var(--amber2); }
+  .sup-badge.high { background: rgba(216,90,48,0.12); color: var(--red2); }
+
+  /* ─── Inventory ─── */
+  .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .inv-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 12px 14px;
+  }
+  .inv-sku { font-size: 10px; color: var(--text3); font-family: var(--mono); margin-bottom: 4px; }
+  .inv-product { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .inv-val { font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .inv-bar-bg { height: 3px; background: var(--bg4); border-radius: 2px; margin-bottom: 5px; }
+  .inv-bar { height: 3px; border-radius: 2px; }
+  .inv-alert { font-size: 10px; }
+  .inv-alert.ok { color: var(--green2); }
+  .inv-alert.warn { color: var(--amber2); }
+  .inv-alert.danger { color: var(--red2); }
+
+  /* ─── ETA Prediction ─── */
+  .eta-list { display: flex; flex-direction: column; gap: 10px; }
+  .eta-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg3); border-radius: 8px; padding: 10px 14px;
+  }
+  .eta-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .eta-icon.ok { background: rgba(29,158,117,0.12); color: var(--green); }
+  .eta-icon.warn { background: rgba(186,117,23,0.12); color: var(--amber2); }
+  .eta-icon i { font-size: 17px; }
+  .eta-info { flex: 1; }
+  .eta-name { font-size: 12px; color: var(--text); }
+  .eta-route { font-size: 11px; color: var(--text3); }
+  .eta-time { text-align: right; }
+  .eta-time .time { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); }
+  .eta-time .conf-label { font-size: 10px; color: var(--text3); }
+
+  /* ─── Route Efficiency ─── */
+  .route-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .route-stat { background: var(--bg3); border-radius: 8px; padding: 10px 12px; text-align: center; }
+  .route-stat .rs-val { font-size: 18px; font-weight: 500; margin-bottom: 2px; }
+  .route-stat .rs-label { font-size: 10px; color: var(--text3); }
+
+  /* ─── Fleet ─── */
+  .fleet-list { display: flex; flex-direction: column; gap: 9px; }
+  .fleet-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg3); border-radius: 8px;
+  }
+  .fleet-icon { width: 30px; height: 30px; border-radius: 7px; background: rgba(55,138,221,0.1); display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 16px; }
+  .fleet-id { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 64px; }
+  .fleet-driver { font-size: 12px; color: var(--text); flex: 1; }
+  .fleet-fuel { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .fuel-bar-bg { width: 50px; height: 4px; background: var(--bg4); border-radius: 2px; }
+  .fuel-bar { height: 4px; border-radius: 2px; background: var(--blue); }
+
+  /* ─── AI Copilot ─── */
+  .copilot-card {
+    background: linear-gradient(135deg, #0a1f17 0%, #0d2a1e 50%, #0f2e22 100%);
+    border: 1px solid rgba(29,158,117,0.25);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 14px;
+  }
+  .copilot-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .cop-icon { width: 40px; height: 40px; background: rgba(29,158,117,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .cop-icon i { font-size: 22px; color: var(--green2); }
+  .cop-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .cop-sub { font-size: 11px; color: var(--text3); }
+  .copilot-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px; color: var(--green3);
+    cursor: pointer; transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .chip:hover { background: rgba(29,158,117,0.15); border-color: rgba(29,158,117,0.3); }
+
+  /* ─── Delay Prediction ─── */
+  .delay-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .delay-item:last-child { border-bottom: none; }
+  .delay-sev { width: 4px; align-self: stretch; border-radius: 2px; flex-shrink: 0; margin-top: 2px; }
+  .delay-sev.high { background: var(--red); }
+  .delay-sev.med { background: var(--amber2); }
+  .delay-sev.low { background: var(--blue); }
+  .delay-info { flex: 1; }
+  .delay-route { font-size: 12px; color: var(--text); }
+  .delay-reason { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .delay-prob { font-size: 12px; font-family: var(--mono); color: var(--text2); text-align: right; }
+
+  /* ─── Analytics ─── */
+  .analytics-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;
+  }
+  .a-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+  }
+  .a-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .a-val { font-size: 22px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .a-sub { font-size: 11px; color: var(--text3); }
+
+  /* ─── Warehouse AI ─── */
+  .warehouse-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .wh-zone {
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+    text-align: center;
+  }
+  .wh-zone-name { font-size: 10px; color: var(--text3); margin-bottom: 6px; }
+  .wh-util { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .util-bar-bg { height: 4px; background: var(--bg4); border-radius: 2px; }
+  .util-bar { height: 4px; border-radius: 2px; background: var(--green); }
+  .util-bar.med { background: var(--amber2); }
+  .util-bar.high { background: var(--red); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="ti ti-building-factory-2"></i></div>
+      <div>
+        <div class="logo-text">Control Tower</div>
+        <div class="logo-sub">AI Logistics Platform</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <button class="nav-item active" onclick="showSection('overview')"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+      <button class="nav-item" onclick="showSection('analytics')"><i class="ti ti-chart-area-line"></i> Analytics</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Operations</div>
+      <button class="nav-item" onclick="showSection('shipments')"><i class="ti ti-truck-delivery"></i> Shipments <span class="nav-badge">23</span></button>
+      <button class="nav-item" onclick="showSection('routes')"><i class="ti ti-route"></i> Routes</button>
+      <button class="nav-item" onclick="showSection('fleet')"><i class="ti ti-truck"></i> Fleet</button>
+      <button class="nav-item" onclick="showSection('warehouse')"><i class="ti ti-building-warehouse"></i> Warehouse AI</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Intelligence</div>
+      <button class="nav-item" onclick="showSection('demand')"><i class="ti ti-chart-line"></i> Demand Forecast</button>
+      <button class="nav-item" onclick="showSection('inventory')"><i class="ti ti-package"></i> Inventory</button>
+      <button class="nav-item" onclick="showSection('suppliers')"><i class="ti ti-building-community"></i> Suppliers</button>
+      <button class="nav-item" onclick="showSection('delays')"><i class="ti ti-alert-triangle"></i> Delay Predict <span class="nav-badge">3</span></button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Tools</div>
+      <button class="nav-item" onclick="showSection('copilot')"><i class="ti ti-robot"></i> AI Copilot <span class="nav-badge green">AI</span></button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="system-status">
+        <div class="sys-row">
+          <span class="sys-label">ERP Sync</span>
+          <div class="sys-dot"></div>
+        </div>
+        <div class="sys-row">
+          <span class="sys-label">GPS Feed</span>
+          <div class="sys-dot"></div>
+        </div>
+        <div class="sys-row">
+          <span class="sys-label">Weather API</span>
+          <div class="sys-dot warn"></div>
+        </div>
+        <div class="sys-row">
+          <span class="sys-label">ML Models</span>
+          <div class="sys-dot"></div>
+        </div>
+      </div>
+      <div class="nav-item" style="pointer-events:none; opacity:0.5;">
+        <i class="ti ti-user-circle"></i> Arjun Sharma
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div>
+          <div class="page-title" id="page-title">Dashboard Overview</div>
+          <div class="page-sub">Sunday, 1 June 2026 · 847 active shipments</div>
+        </div>
+        <div class="status-badge">
+          <div class="pulse"></div>
+          All systems live
+        </div>
+      </div>
+      <div class="topbar-right">
+        <select class="time-select">
+          <option>Last 7 days</option>
+          <option>Last 30 days</option>
+          <option>Last 90 days</option>
+        </select>
+        <div class="icon-btn notif"><i class="ti ti-bell"></i><div class="notif-dot"></div></div>
+        <div class="icon-btn"><i class="ti ti-settings"></i></div>
+      </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="content">
+
+      <!-- ═══ OVERVIEW ═══ -->
+      <div id="sec-overview">
+
+        <!-- KPIs -->
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">On-time delivery</div>
+            <div class="kpi-value">94.2%</div>
+            <div class="kpi-sub up"><i class="ti ti-trending-up" style="font-size:12px"></i> +2.1% vs last week</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Forecast accuracy</div>
+            <div class="kpi-value">89.7%</div>
+            <div class="kpi-sub up"><i class="ti ti-trending-up" style="font-size:12px"></i> +0.8% this week</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Delayed shipments</div>
+            <div class="kpi-value">23</div>
+            <div class="kpi-sub warn"><i class="ti ti-alert-triangle" style="font-size:12px"></i> 3 critical priority</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Cost / unit</div>
+            <div class="kpi-value">₹142</div>
+            <div class="kpi-sub up"><i class="ti ti-trending-down" style="font-size:12px"></i> −₹8 vs last month</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Active vehicles</div>
+            <div class="kpi-value">218</div>
+            <div class="kpi-sub neutral"><i class="ti ti-truck" style="font-size:12px"></i> 12 idle · 6 maintenance</div>
+          </div>
+        </div>
+
+        <!-- Demand Forecast + Route Chart -->
+        <div class="grid-2-1">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-chart-line"></i> Demand forecast — next 8 weeks</div>
+              <div class="chart-legend">
+                <div class="leg"><div class="leg-sq" style="background:var(--green); height:3px;"></div> Actual</div>
+                <div class="leg"><div class="leg-sq dashed"></div> Forecast</div>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="demandChart" role="img" aria-label="Demand forecast chart showing actual and predicted demand over 8 weeks">Demand: W1 420, W2 450, W3 480, W4 510. Forecast: W5 490, W6 530, W7 560, W8 545.</canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-route"></i> Route efficiency</div>
+              <button class="card-action" onclick="showSection('routes')">View routes</button>
+            </div>
+            <div class="chart-wrap" style="height:160px;">
+              <canvas id="routeChart" role="img" aria-label="Doughnut chart: Optimal 62%, Suboptimal 24%, Rerouted 14%">Optimal 62%, Suboptimal 24%, Rerouted 14%</canvas>
+            </div>
+            <div class="route-stats">
+              <div class="route-stat">
+                <div class="rs-val" style="color:var(--green2)">62%</div>
+                <div class="rs-label">Optimal</div>
+              </div>
+              <div class="route-stat">
+                <div class="rs-val" style="color:var(--amber2)">24%</div>
+                <div class="rs-label">Suboptimal</div>
+              </div>
+              <div class="route-stat">
+                <div class="rs-val" style="color:var(--red2)">14%</div>
+                <div class="rs-label">Rerouted</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shipments + Suppliers + Inventory -->
+        <div class="grid-3">
+
+          <!-- Live Shipments -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-truck-delivery"></i> Live shipments</div>
+              <button class="card-action" onclick="showSection('shipments')">See all</button>
+            </div>
+            <table class="ship-table">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Route</th><th>ETA</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td class="ship-id">SHP-8821</td><td class="route">Mumbai → Delhi</td><td class="eta">3:40 PM</td><td><span class="badge badge-ok">On time</span></td></tr>
+                <tr><td class="ship-id">SHP-8834</td><td class="route">Pune → Ludhiana</td><td class="eta">6:15 PM</td><td><span class="badge badge-warn">+45 min</span></td></tr>
+                <tr><td class="ship-id">SHP-8799</td><td class="route">Chennai → Kolkata</td><td class="eta">Tomorrow</td><td><span class="badge badge-late">Delayed</span></td></tr>
+                <tr><td class="ship-id">SHP-8856</td><td class="route">Hyd → Jaipur</td><td class="eta">9:00 AM</td><td><span class="badge badge-ok">On time</span></td></tr>
+                <tr><td class="ship-id">SHP-8863</td><td class="route">BLR → Surat</td><td class="eta">11:30 AM</td><td><span class="badge badge-warn">+20 min</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Inventory -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-package"></i> Inventory snapshot</div>
+              <button class="card-action" onclick="showSection('inventory')">Full view</button>
+            </div>
+            <div class="inv-grid">
+              <div class="inv-item">
+                <div class="inv-sku">SKU-A41</div>
+                <div class="inv-product">Electronics</div>
+                <div class="inv-val">4,820</div>
+                <div class="inv-bar-bg"><div class="inv-bar" style="width:80%; background:var(--green);"></div></div>
+                <div class="inv-alert ok">✓ Healthy stock</div>
+              </div>
+              <div class="inv-item">
+                <div class="inv-sku">SKU-B12</div>
+                <div class="inv-product">Apparel</div>
+                <div class="inv-val">1,102</div>
+                <div class="inv-bar-bg"><div class="inv-bar" style="width:35%; background:var(--amber2);"></div></div>
+                <div class="inv-alert warn">⚠ Reorder soon</div>
+              </div>
+              <div class="inv-item">
+                <div class="inv-sku">SKU-C07</div>
+                <div class="inv-product">FMCG</div>
+                <div class="inv-val">326</div>
+                <div class="inv-bar-bg"><div class="inv-bar" style="width:12%; background:var(--red);"></div></div>
+                <div class="inv-alert danger">⚡ Stockout risk</div>
+              </div>
+              <div class="inv-item">
+                <div class="inv-sku">SKU-D88</div>
+                <div class="inv-product">Auto parts</div>
+                <div class="inv-val">9,540</div>
+                <div class="inv-bar-bg"><div class="inv-bar" style="width:95%; background:var(--amber2);"></div></div>
+                <div class="inv-alert warn">↑ Overstock</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Supplier Risk -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-building-community"></i> Supplier risk</div>
+              <button class="card-action" onclick="showSection('suppliers')">Full analysis</button>
+            </div>
+            <div class="sup-list">
+              <div class="sup-row">
+                <span class="sup-name">FastParts Co</span>
+                <div class="risk-bar-bg"><div class="risk-bar risk-low" style="width:18%"></div></div>
+                <span class="sup-pct">18%</span>
+                <span class="sup-badge low">Low</span>
+              </div>
+              <div class="sup-row">
+                <span class="sup-name">GlobalShip</span>
+                <div class="risk-bar-bg"><div class="risk-bar risk-med" style="width:44%"></div></div>
+                <span class="sup-pct">44%</span>
+                <span class="sup-badge med">Med</span>
+              </div>
+              <div class="sup-row">
+                <span class="sup-name">NorthTrade</span>
+                <div class="risk-bar-bg"><div class="risk-bar risk-low" style="width:22%"></div></div>
+                <span class="sup-pct">22%</span>
+                <span class="sup-badge low">Low</span>
+              </div>
+              <div class="sup-row">
+                <span class="sup-name">SunLogix</span>
+                <div class="risk-bar-bg"><div class="risk-bar risk-high" style="width:71%"></div></div>
+                <span class="sup-pct">71%</span>
+                <span class="sup-badge high">High</span>
+              </div>
+              <div class="sup-row">
+                <span class="sup-name">QuickFreight</span>
+                <div class="risk-bar-bg"><div class="risk-bar risk-med" style="width:38%"></div></div>
+                <span class="sup-pct">38%</span>
+                <span class="sup-badge med">Med</span>
+              </div>
+              <div class="sup-row">
+                <span class="sup-name">PrimeTrans</span>
+                <div class="risk-bar-bg"><div class="risk-bar risk-low" style="width:11%"></div></div>
+                <span class="sup-pct">11%</span>
+                <span class="sup-badge low">Low</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Copilot -->
+        <div class="copilot-card">
+          <div class="copilot-header">
+            <div class="cop-icon"><i class="ti ti-robot"></i></div>
+            <div>
+              <div class="cop-title">AI Copilot</div>
+              <div class="cop-sub">RAG + LangGraph · Ask anything about your supply chain</div>
+            </div>
+          </div>
+          <div class="copilot-chips">
+            <div class="chip" onclick="showSection('delays')">Show delayed shipments</div>
+            <div class="chip" onclick="showSection('inventory')">Predict stockouts next month</div>
+            <div class="chip" onclick="showSection('suppliers')">Which supplier is highest risk?</div>
+            <div class="chip" onclick="showSection('routes')">Optimize tomorrow's routes</div>
+            <div class="chip" onclick="showSection('analytics')">Weekly cost analysis</div>
+            <div class="chip" onclick="showSection('demand')">Festival demand impact?</div>
+            <div class="chip" onclick="showSection('fleet')">Fleet fuel performance</div>
+          </div>
+        </div>
+
+      </div><!-- /overview -->
+
+      <!-- ═══ ANALYTICS ═══ -->
+      <div id="sec-analytics" style="display:none">
+        <div class="analytics-strip">
+          <div class="a-card"><div class="a-label">Total logistics cost</div><div class="a-val">₹2.4Cr</div><div class="a-sub">This month</div></div>
+          <div class="a-card"><div class="a-label">Avg delivery time</div><div class="a-val">28.4 hr</div><div class="a-sub">−2.1 hr vs last month</div></div>
+          <div class="a-card"><div class="a-label">Orders fulfilled</div><div class="a-val">14,820</div><div class="a-sub">+8.3% growth</div></div>
+          <div class="a-card"><div class="a-label">Return rate</div><div class="a-val">3.2%</div><div class="a-sub">−0.4% improvement</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i> Monthly cost breakdown</div></div>
+            <div class="chart-wrap"><canvas id="costChart" role="img" aria-label="Monthly logistics cost breakdown chart">Cost breakdown by month showing fuel, labour, warehousing, last-mile.</canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-chart-pie"></i> Delivery KPIs</div></div>
+            <div class="chart-wrap"><canvas id="kpiChart" role="img" aria-label="Delivery performance KPI chart">On-time 94.2%, Early 2.1%, Late 3.7%</canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SHIPMENTS ═══ -->
+      <div id="sec-shipments" style="display:none">
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-truck-delivery"></i> All shipments</div>
+            <div style="display:flex; gap:8px;">
+              <span class="badge badge-ok">On time: 802</span>
+              <span class="badge badge-warn">Delayed: 22</span>
+              <span class="badge badge-late">Critical: 3</span>
+            </div>
+          </div>
+          <table class="ship-table" style="width:100%">
+            <thead>
+              <tr><th>Shipment ID</th><th>Origin → Destination</th><th>Customer</th><th>ETA</th><th>Confidence</th><th>Status</th><th>Delay reason</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="ship-id">SHP-8821</td><td class="route">Mumbai → Delhi</td><td style="font-size:12px;color:var(--text2)">Reliance Retail</td><td class="eta">Today 3:40 PM</td><td class="conf hi">96%</td><td><span class="badge badge-ok">On time</span></td><td style="font-size:11px;color:var(--text3)">—</td></tr>
+              <tr><td class="ship-id">SHP-8834</td><td class="route">Pune → Ludhiana</td><td style="font-size:12px;color:var(--text2)">Tata Commerce</td><td class="eta">Today 6:15 PM</td><td class="conf med">78%</td><td><span class="badge badge-warn">+45 min</span></td><td style="font-size:11px;color:var(--text3)">Highway congestion</td></tr>
+              <tr><td class="ship-id">SHP-8799</td><td class="route">Chennai → Kolkata</td><td style="font-size:12px;color:var(--text2)">Flipkart WH</td><td class="eta">Tomorrow 9 AM</td><td class="conf med">61%</td><td><span class="badge badge-late">Delayed</span></td><td style="font-size:11px;color:var(--text3)">Vehicle breakdown</td></tr>
+              <tr><td class="ship-id">SHP-8856</td><td class="route">Hyderabad → Jaipur</td><td style="font-size:12px;color:var(--text2)">Amazon IN</td><td class="eta">Tomorrow 9 AM</td><td class="conf hi">93%</td><td><span class="badge badge-ok">On time</span></td><td style="font-size:11px;color:var(--text3)">—</td></tr>
+              <tr><td class="ship-id">SHP-8863</td><td class="route">Bengaluru → Surat</td><td style="font-size:12px;color:var(--text2)">Meesho</td><td class="eta">Tomorrow 11:30 AM</td><td class="conf med">83%</td><td><span class="badge badge-warn">+20 min</span></td><td style="font-size:11px;color:var(--text3)">Weather: rain</td></tr>
+              <tr><td class="ship-id">SHP-8871</td><td class="route">Delhi → Bhopal</td><td style="font-size:12px;color:var(--text2)">DMart</td><td class="eta">Today 8:00 PM</td><td class="conf hi">91%</td><td><span class="badge badge-ok">On time</span></td><td style="font-size:11px;color:var(--text3)">—</td></tr>
+              <tr><td class="ship-id">SHP-8879</td><td class="route">Ahmedabad → Patna</td><td style="font-size:12px;color:var(--text2)">Zepto DC</td><td class="eta">+2 days</td><td class="conf med">54%</td><td><span class="badge badge-late">Critical</span></td><td style="font-size:11px;color:var(--text3)">Strike: NH48</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ ROUTES ═══ -->
+      <div id="sec-routes" style="display:none">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kpi-label">Avg route length</div><div class="kpi-value">847 km</div><div class="kpi-sub up">−32 km optimised</div></div>
+          <div class="kpi"><div class="kpi-label">Fuel saved</div><div class="kpi-value">₹4.2L</div><div class="kpi-sub up">This week</div></div>
+          <div class="kpi"><div class="kpi-label">Active routes</div><div class="kpi-value">312</div><div class="kpi-sub neutral">18 being rerouted</div></div>
+          <div class="kpi"><div class="kpi-label">AI reroutes today</div><div class="kpi-value">47</div><div class="kpi-sub up">All successful</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-route"></i> Route efficiency trend</div></div>
+            <div class="chart-wrap"><canvas id="routeTrendChart" role="img" aria-label="Route efficiency trend over 8 weeks">Route efficiency trend chart.</canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-map-pin"></i> ETA predictions</div></div>
+            <div class="eta-list">
+              <div class="eta-item"><div class="eta-icon ok"><i class="ti ti-truck"></i></div><div class="eta-info"><div class="eta-name">SHP-8821 · Mumbai → Delhi</div><div class="eta-route">Via NH48 · Traffic: moderate</div></div><div class="eta-time"><div class="time">3:40 PM</div><div class="conf-label">Conf: 96%</div></div></div>
+              <div class="eta-item"><div class="eta-icon warn"><i class="ti ti-truck"></i></div><div class="eta-info"><div class="eta-name">SHP-8834 · Pune → Ludhiana</div><div class="eta-route">Via NH44 · Traffic: heavy</div></div><div class="eta-time"><div class="time">6:15 PM</div><div class="conf-label">Conf: 78%</div></div></div>
+              <div class="eta-item"><div class="eta-icon ok"><i class="ti ti-truck"></i></div><div class="eta-info"><div class="eta-name">SHP-8856 · Hyd → Jaipur</div><div class="eta-route">Via NH65 · Traffic: light</div></div><div class="eta-time"><div class="time">9:00 AM</div><div class="conf-label">Conf: 93%</div></div></div>
+              <div class="eta-item"><div class="eta-icon ok"><i class="ti ti-truck"></i></div><div class="eta-info"><div class="eta-name">SHP-8871 · Delhi → Bhopal</div><div class="eta-route">Via NH12 · Traffic: moderate</div></div><div class="eta-time"><div class="time">8:00 PM</div><div class="conf-label">Conf: 91%</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ FLEET ═══ -->
+      <div id="sec-fleet" style="display:none">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kpi-label">Total vehicles</div><div class="kpi-value">236</div><div class="kpi-sub up">218 active</div></div>
+          <div class="kpi"><div class="kpi-label">Avg fuel efficiency</div><div class="kpi-value">8.4 km/L</div><div class="kpi-sub up">+0.6 vs last month</div></div>
+          <div class="kpi"><div class="kpi-label">In maintenance</div><div class="kpi-value">6</div><div class="kpi-sub warn">2 scheduled, 4 emergency</div></div>
+          <div class="kpi"><div class="kpi-label">Driver score avg</div><div class="kpi-value">87/100</div><div class="kpi-sub up">+3 this week</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="ti ti-truck"></i> Vehicle tracker</div></div>
+          <div class="fleet-list">
+            <div class="fleet-row"><div class="fleet-icon"><i class="ti ti-truck"></i></div><span class="fleet-id">VH-1042</span><span class="fleet-driver">Ramesh Kumar · Mumbai → Delhi</span><span class="fleet-fuel">52%</span><div class="fuel-bar-bg"><div class="fuel-bar" style="width:52%"></div></div><span class="badge badge-ok">En route</span></div>
+            <div class="fleet-row"><div class="fleet-icon"><i class="ti ti-truck"></i></div><span class="fleet-id">VH-1098</span><span class="fleet-driver">Suresh Singh · Pune → Ludhiana</span><span class="fleet-fuel">31%</span><div class="fuel-bar-bg"><div class="fuel-bar" style="width:31%; background:var(--amber2);"></div></div><span class="badge badge-warn">Low fuel</span></div>
+            <div class="fleet-row"><div class="fleet-icon"><i class="ti ti-truck"></i></div><span class="fleet-id">VH-1103</span><span class="fleet-driver">Amit Verma · Chennai → Kolkata</span><span class="fleet-fuel">68%</span><div class="fuel-bar-bg"><div class="fuel-bar" style="width:68%"></div></div><span class="badge badge-late">Breakdown</span></div>
+            <div class="fleet-row"><div class="fleet-icon"><i class="ti ti-truck"></i></div><span class="fleet-id">VH-1117</span><span class="fleet-driver">Pradeep Nair · Hyd → Jaipur</span><span class="fleet-fuel">76%</span><div class="fuel-bar-bg"><div class="fuel-bar" style="width:76%"></div></div><span class="badge badge-ok">On route</span></div>
+            <div class="fleet-row"><div class="fleet-icon"><i class="ti ti-truck"></i></div><span class="fleet-id">VH-1124</span><span class="fleet-driver">Kiran Patil · BLR → Surat</span><span class="fleet-fuel">55%</span><div class="fuel-bar-bg"><div class="fuel-bar" style="width:55%"></div></div><span class="badge badge-warn">Minor delay</span></div>
+            <div class="fleet-row"><div class="fleet-icon"><i class="ti ti-truck"></i></div><span class="fleet-id">VH-1131</span><span class="fleet-driver">Deepak Sharma · Idle — Mumbai depot</span><span class="fleet-fuel">89%</span><div class="fuel-bar-bg"><div class="fuel-bar" style="width:89%"></div></div><span class="badge badge-transit">Idle</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ WAREHOUSE AI ═══ -->
+      <div id="sec-warehouse" style="display:none">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kpi-label">Total capacity</div><div class="kpi-value">72%</div><div class="kpi-sub warn">28% available</div></div>
+          <div class="kpi"><div class="kpi-label">Picks per hour</div><div class="kpi-value">342</div><div class="kpi-sub up">+18% with AI slotting</div></div>
+          <div class="kpi"><div class="kpi-label">Travel time saved</div><div class="kpi-value">1.8 hr/day</div><div class="kpi-sub up">AI path optimisation</div></div>
+          <div class="kpi"><div class="kpi-label">Misplace rate</div><div class="kpi-value">0.3%</div><div class="kpi-sub up">−0.7% this quarter</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-building-warehouse"></i> Zone utilisation</div></div>
+            <div class="warehouse-grid">
+              <div class="wh-zone"><div class="wh-zone-name">Zone A — Fast moving</div><div class="wh-util" style="color:var(--green2)">88%</div><div class="util-bar-bg"><div class="util-bar high" style="width:88%"></div></div></div>
+              <div class="wh-zone"><div class="wh-zone-name">Zone B — Medium</div><div class="wh-util" style="color:var(--amber2)">67%</div><div class="util-bar-bg"><div class="util-bar med" style="width:67%"></div></div></div>
+              <div class="wh-zone"><div class="wh-zone-name">Zone C — Slow moving</div><div class="wh-util" style="color:var(--green2)">42%</div><div class="util-bar-bg"><div class="util-bar" style="width:42%"></div></div></div>
+              <div class="wh-zone"><div class="wh-zone-name">Zone D — Bulk storage</div><div class="wh-util" style="color:var(--red2)">94%</div><div class="util-bar-bg"><div class="util-bar high" style="width:94%"></div></div></div>
+              <div class="wh-zone"><div class="wh-zone-name">Zone E — Returns</div><div class="wh-util" style="color:var(--green2)">31%</div><div class="util-bar-bg"><div class="util-bar" style="width:31%"></div></div></div>
+              <div class="wh-zone"><div class="wh-zone-name">Zone F — Dispatch</div><div class="wh-util" style="color:var(--amber2)">75%</div><div class="util-bar-bg"><div class="util-bar med" style="width:75%"></div></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i> Picking efficiency</div></div>
+            <div class="chart-wrap"><canvas id="warehouseChart" role="img" aria-label="Picking efficiency per shift bar chart">Morning 342, Afternoon 298, Night 189 picks per hour.</canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ DEMAND ═══ -->
+      <div id="sec-demand" style="display:none">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kpi-label">Forecast accuracy</div><div class="kpi-value">89.7%</div><div class="kpi-sub up">XGBoost + LSTM ensemble</div></div>
+          <div class="kpi"><div class="kpi-label">Overstock prevented</div><div class="kpi-value">₹18.4L</div><div class="kpi-sub up">This quarter</div></div>
+          <div class="kpi"><div class="kpi-label">Stockouts prevented</div><div class="kpi-value">142</div><div class="kpi-sub up">Via early reorder alert</div></div>
+          <div class="kpi"><div class="kpi-label">Next peak event</div><div class="kpi-value">Diwali</div><div class="kpi-sub warn">Demand spike: +340%</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="ti ti-chart-line"></i> 12-week demand forecast by category</div></div>
+          <div class="chart-wrap" style="height:280px;"><canvas id="demandFullChart" role="img" aria-label="12-week multi-category demand forecast chart">Multi-category demand forecast over 12 weeks.</canvas></div>
+        </div>
+      </div>
+
+      <!-- ═══ INVENTORY ═══ -->
+      <div id="sec-inventory" style="display:none">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kpi-label">Total SKUs</div><div class="kpi-value">3,847</div><div class="kpi-sub neutral">Across 6 warehouses</div></div>
+          <div class="kpi"><div class="kpi-label">Stockout risk</div><div class="kpi-value">14 SKUs</div><div class="kpi-sub warn">Action needed now</div></div>
+          <div class="kpi"><div class="kpi-label">Overstock items</div><div class="kpi-value">87 SKUs</div><div class="kpi-sub down">₹2.1Cr tied up</div></div>
+          <div class="kpi"><div class="kpi-label">Reorder alerts</div><div class="kpi-value">32</div><div class="kpi-sub warn">Today</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="ti ti-package"></i> Inventory levels</div></div>
+          <div class="inv-grid" style="grid-template-columns:repeat(4,1fr)">
+            <div class="inv-item"><div class="inv-sku">SKU-A41</div><div class="inv-product">Electronics · WH-Mumbai</div><div class="inv-val">4,820</div><div class="inv-bar-bg"><div class="inv-bar" style="width:80%; background:var(--green);"></div></div><div class="inv-alert ok">✓ Healthy stock · 28 days</div></div>
+            <div class="inv-item"><div class="inv-sku">SKU-B12</div><div class="inv-product">Apparel · WH-Delhi</div><div class="inv-val">1,102</div><div class="inv-bar-bg"><div class="inv-bar" style="width:35%; background:var(--amber2);"></div></div><div class="inv-alert warn">⚠ Reorder in 9 days</div></div>
+            <div class="inv-item"><div class="inv-sku">SKU-C07</div><div class="inv-product">FMCG · WH-Pune</div><div class="inv-val">326</div><div class="inv-bar-bg"><div class="inv-bar" style="width:12%; background:var(--red);"></div></div><div class="inv-alert danger">⚡ Stockout in 3 days</div></div>
+            <div class="inv-item"><div class="inv-sku">SKU-D88</div><div class="inv-product">Auto Parts · WH-Chennai</div><div class="inv-val">9,540</div><div class="inv-bar-bg"><div class="inv-bar" style="width:95%; background:var(--amber2);"></div></div><div class="inv-alert warn">↑ Overstock 95%</div></div>
+            <div class="inv-item"><div class="inv-sku">SKU-E22</div><div class="inv-product">Pharma · WH-Hyd</div><div class="inv-val">2,210</div><div class="inv-bar-bg"><div class="inv-bar" style="width:55%; background:var(--green);"></div></div><div class="inv-alert ok">✓ Healthy stock · 22 days</div></div>
+            <div class="inv-item"><div class="inv-sku">SKU-F55</div><div class="inv-product">Furniture · WH-BLR</div><div class="inv-val">480</div><div class="inv-bar-bg"><div class="inv-bar" style="width:20%; background:var(--amber2);"></div></div><div class="inv-alert warn">⚠ Low — reorder</div></div>
+            <div class="inv-item"><div class="inv-sku">SKU-G09</div><div class="inv-product">Cosmetics · WH-Kolkata</div><div class="inv-val">3,420</div><div class="inv-bar-bg"><div class="inv-bar" style="width:70%; background:var(--green);"></div></div><div class="inv-alert ok">✓ Healthy stock · 35 days</div></div>
+            <div class="inv-item"><div class="inv-sku">SKU-H71</div><div class="inv-product">Toys · WH-Ahmedabad</div><div class="inv-val">188</div><div class="inv-bar-bg"><div class="inv-bar" style="width:8%; background:var(--red);"></div></div><div class="inv-alert danger">⚡ Critical — 2 days left</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SUPPLIERS ═══ -->
+      <div id="sec-suppliers" style="display:none">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kpi-label">Total suppliers</div><div class="kpi-value">84</div><div class="kpi-sub neutral">Across 12 categories</div></div>
+          <div class="kpi"><div class="kpi-label">High risk</div><div class="kpi-value">7</div><div class="kpi-sub warn">Require attention</div></div>
+          <div class="kpi"><div class="kpi-label">Avg on-time %</div><div class="kpi-value">91.4%</div><div class="kpi-sub up">+1.2% this quarter</div></div>
+          <div class="kpi"><div class="kpi-label">Risk alerts today</div><div class="kpi-value">3</div><div class="kpi-sub warn">AI flagged</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="ti ti-building-community"></i> Supplier risk scorecards</div></div>
+          <div class="sup-list">
+            <div class="sup-row"><span class="sup-name">FastParts Co</span><div class="risk-bar-bg"><div class="risk-bar risk-low" style="width:18%"></div></div><span class="sup-pct">18%</span><span class="sup-badge low">Low</span></div>
+            <div class="sup-row"><span class="sup-name">GlobalShip</span><div class="risk-bar-bg"><div class="risk-bar risk-med" style="width:44%"></div></div><span class="sup-pct">44%</span><span class="sup-badge med">Med</span></div>
+            <div class="sup-row"><span class="sup-name">NorthTrade</span><div class="risk-bar-bg"><div class="risk-bar risk-low" style="width:22%"></div></div><span class="sup-pct">22%</span><span class="sup-badge low">Low</span></div>
+            <div class="sup-row"><span class="sup-name">SunLogix</span><div class="risk-bar-bg"><div class="risk-bar risk-high" style="width:71%"></div></div><span class="sup-pct">71%</span><span class="sup-badge high">High</span></div>
+            <div class="sup-row"><span class="sup-name">QuickFreight</span><div class="risk-bar-bg"><div class="risk-bar risk-med" style="width:38%"></div></div><span class="sup-pct">38%</span><span class="sup-badge med">Med</span></div>
+            <div class="sup-row"><span class="sup-name">PrimeTrans</span><div class="risk-bar-bg"><div class="risk-bar risk-low" style="width:11%"></div></div><span class="sup-pct">11%</span><span class="sup-badge low">Low</span></div>
+            <div class="sup-row"><span class="sup-name">BharatCargo</span><div class="risk-bar-bg"><div class="risk-bar risk-high" style="width:66%"></div></div><span class="sup-pct">66%</span><span class="sup-badge high">High</span></div>
+            <div class="sup-row"><span class="sup-name">SwiftSupply</span><div class="risk-bar-bg"><div class="risk-bar risk-low" style="width:24%"></div></div><span class="sup-pct">24%</span><span class="sup-badge low">Low</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ DELAY PREDICTION ═══ -->
+      <div id="sec-delays" style="display:none">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="kpi-label">Delays predicted</div><div class="kpi-value">23</div><div class="kpi-sub warn">AI flagged 6 hrs early</div></div>
+          <div class="kpi"><div class="kpi-label">Prediction accuracy</div><div class="kpi-value">87.2%</div><div class="kpi-sub up">LSTM model</div></div>
+          <div class="kpi"><div class="kpi-label">Avg delay</div><div class="kpi-value">1.4 hrs</div><div class="kpi-sub neutral">Down from 2.1 last month</div></div>
+          <div class="kpi"><div class="kpi-label">Cost of delays</div><div class="kpi-value">₹3.8L</div><div class="kpi-sub warn">This week</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><i class="ti ti-alert-triangle"></i> Predicted delays — root cause analysis</div></div>
+          <div class="delay-item"><div class="delay-sev high"></div><div class="delay-info"><div class="delay-route">SHP-8799 · Chennai → Kolkata</div><div class="delay-reason">Root cause: Vehicle breakdown (VH-1103). Replacement dispatched.</div></div><div class="delay-prob" style="color:var(--red2)">94% delay prob.</div></div>
+          <div class="delay-item"><div class="delay-sev high"></div><div class="delay-info"><div class="delay-route">SHP-8879 · Ahmedabad → Patna</div><div class="delay-reason">Root cause: NH48 labour strike. Rerouting via NH27.</div></div><div class="delay-prob" style="color:var(--red2)">89% delay prob.</div></div>
+          <div class="delay-item"><div class="delay-sev high"></div><div class="delay-info"><div class="delay-route">SHP-8841 · Nagpur → Chandigarh</div><div class="delay-reason">Root cause: Heavy monsoon. NH44 speed restricted.</div></div><div class="delay-prob" style="color:var(--red2)">82% delay prob.</div></div>
+          <div class="delay-item"><div class="delay-sev med"></div><div class="delay-info"><div class="delay-route">SHP-8834 · Pune → Ludhiana</div><div class="delay-reason">Root cause: Rush-hour congestion Mumbai ring road.</div></div><div class="delay-prob" style="color:var(--amber2)">68% delay prob.</div></div>
+          <div class="delay-item"><div class="delay-sev med"></div><div class="delay-info"><div class="delay-route">SHP-8863 · Bengaluru → Surat</div><div class="delay-reason">Root cause: Rain forecast, driver speed reduction expected.</div></div><div class="delay-prob" style="color:var(--amber2)">57% delay prob.</div></div>
+          <div class="delay-item"><div class="delay-sev low"></div><div class="delay-info"><div class="delay-route">SHP-8892 · Lucknow → Ahmedabad</div><div class="delay-reason">Root cause: Fuel stop delay, minor schedule slip.</div></div><div class="delay-prob" style="color:var(--blue2)">31% delay prob.</div></div>
+        </div>
+      </div>
+
+      <!-- ═══ AI COPILOT ═══ -->
+      <div id="sec-copilot" style="display:none">
+        <div class="copilot-card" style="margin-bottom:0">
+          <div class="copilot-header">
+            <div class="cop-icon"><i class="ti ti-robot"></i></div>
+            <div>
+              <div class="cop-title">AI Supply Chain Copilot</div>
+              <div class="cop-sub">Powered by RAG + LangGraph · Connects to ERP, WMS, TMS, GPS</div>
+            </div>
+          </div>
+          <div id="chat-messages" style="min-height:200px; max-height:380px; overflow-y:auto; margin-bottom:14px; display:flex; flex-direction:column; gap:10px;">
+            <div style="background:rgba(29,158,117,0.08); border:1px solid rgba(29,158,117,0.15); border-radius:10px; padding:12px 16px; font-size:13px; color:var(--text2);">
+              Hello! I'm your AI Logistics Copilot. I have real-time access to your ERP, WMS, TMS, GPS feeds, and ML model outputs. Ask me anything about your supply chain — shipments, forecasts, supplier risk, route optimisation, inventory levels, or cost analytics.
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:14px;">
+            <input id="chat-input" type="text" placeholder="e.g. Which supplier has the highest risk this week?" style="flex:1; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:10px 14px; color:var(--text); font-family:var(--font); font-size:13px; outline:none;" onkeydown="if(event.key==='Enter') sendChat()" />
+            <button onclick="sendChat()" style="background:var(--green); border:none; border-radius:8px; padding:10px 16px; color:#fff; cursor:pointer; font-family:var(--font); font-size:13px; font-weight:500;">Send</button>
+          </div>
+          <div class="copilot-chips">
+            <div class="chip" onclick="setChatInput('Show me all delayed shipments')">Delayed shipments</div>
+            <div class="chip" onclick="setChatInput('Predict stockouts next month')">Stockout forecast</div>
+            <div class="chip" onclick="setChatInput('Which supplier has highest risk?')">Supplier risk</div>
+            <div class="chip" onclick="setChatInput('Optimise routes for tomorrow')">Optimise routes</div>
+            <div class="chip" onclick="setChatInput('Weekly logistics cost analysis')">Cost analysis</div>
+            <div class="chip" onclick="setChatInput('Diwali demand impact on inventory?')">Festival demand</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<script>
+  const sections = ['overview','analytics','shipments','routes','fleet','warehouse','demand','inventory','suppliers','delays','copilot','dashboard'];
+  const titles = {
+    overview: 'Dashboard Overview',
+    dashboard: 'Dashboard Overview',
+    analytics: 'Analytics & KPIs',
+    shipments: 'Shipment Tracker',
+    routes: 'Route Optimisation & ETA',
+    fleet: 'Fleet Management',
+    warehouse: 'Warehouse AI',
+    demand: 'Demand Forecasting',
+    inventory: 'Inventory Management',
+    suppliers: 'Supplier Risk Analysis',
+    delays: 'Delay Prediction',
+    copilot: 'AI Copilot'
+  };
+
+  function showSection(name, updateUrl = true) {
+    const target = name === 'dashboard' ? 'overview' : name;
+    sections.forEach(s => {
+      const el = document.getElementById('sec-' + s);
+      if (el) el.style.display = s === target ? '' : 'none';
+    });
+    document.getElementById('page-title').textContent = titles[name] || name;
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => {
+      const label = titles[target]?.split(' ')[0].toLowerCase() || target;
+      if (el.textContent.trim().toLowerCase().includes(label)) {
+        el.classList.add('active');
+      }
+    });
+    if (updateUrl) {
+      const url = name === 'overview' ? '/' : '/' + name;
+      history.pushState({ section: name }, "", url);
+    }
+    renderChartsIfNeeded(target);
+  }
+
+  // Handle browser back/forward
+  window.onpopstate = function(event) {
+    if (event.state && event.state.section) {
+      showSection(event.state.section, false);
+    } else {
+      showSection('overview', false);
+    }
+  };
+
+  // Initial load routing
+   window.onload = function() {
+     const path = window.location.pathname.substring(1);
+     if (path === '' || path === 'dashboard') {
+       showSection('dashboard', false);
+     } else if (sections.includes(path)) {
+       showSection(path, false);
+     } else {
+       showSection('overview', false);
+     }
+   };
+
+  // ── Charts ──
+  const chartInstances = {};
+
+  function renderChartsIfNeeded(section) {
+    if (section === 'overview' && !chartInstances.demand) renderOverviewCharts();
+    if (section === 'analytics' && !chartInstances.cost) renderAnalyticsCharts();
+    if (section === 'routes' && !chartInstances.routeTrend) renderRouteCharts();
+    if (section === 'warehouse' && !chartInstances.warehouse) renderWarehouseChart();
+    if (section === 'demand' && !chartInstances.demandFull) renderDemandFullChart();
+  }
+
+  function renderOverviewCharts() {
+    const weeks = ['W1','W2','W3','W4','W5','W6','W7','W8'];
+    const actual = [420,450,480,510,null,null,null,null];
+    const forecast = [null,null,null,510,490,530,560,545];
+    chartInstances.demand = new Chart(document.getElementById('demandChart'), {
+      type: 'line',
+      data: { labels: weeks, datasets: [
+        { label:'Actual', data:actual, borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.08)', fill:true, pointRadius:4, pointBackgroundColor:'#1D9E75', tension:0.4, spanGaps:false },
+        { label:'Forecast', data:forecast, borderColor:'#5DCAA5', backgroundColor:'transparent', pointRadius:4, pointBackgroundColor:'#5DCAA5', borderDash:[5,3], tension:0.4, spanGaps:false }
+      ]},
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066',font:{size:11}}, min:380, max:620 } } }
+    });
+    chartInstances.route = new Chart(document.getElementById('routeChart'), {
+      type:'doughnut',
+      data:{ labels:['Optimal','Suboptimal','Rerouted'], datasets:[{ data:[62,24,14], backgroundColor:['#1D9E75','#BA7517','#D85A30'], borderWidth:0, hoverOffset:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'72%', plugins:{ legend:{display:false} } }
+    });
+  }
+
+  function renderAnalyticsCharts() {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun'];
+    chartInstances.cost = new Chart(document.getElementById('costChart'), {
+      type:'bar',
+      data:{ labels:months, datasets:[
+        { label:'Fuel', data:[42,38,45,41,39,44], backgroundColor:'#1D9E75', stack:'a' },
+        { label:'Labour', data:[28,30,27,31,29,28], backgroundColor:'#5DCAA5', stack:'a' },
+        { label:'Warehousing', data:[18,18,20,19,18,20], backgroundColor:'#0F6E56', stack:'a' },
+        { label:'Last-mile', data:[12,14,13,15,14,13], backgroundColor:'#085041', stack:'a' }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true, labels:{color:'#8fa898',font:{size:11},boxWidth:12}} }, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066'}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066'}} } }
+    });
+    chartInstances.kpic = new Chart(document.getElementById('kpiChart'), {
+      type:'doughnut',
+      data:{ labels:['On time (94.2%)','Early (2.1%)','Late (3.7%)'], datasets:[{ data:[94.2,2.1,3.7], backgroundColor:['#1D9E75','#378ADD','#D85A30'], borderWidth:0 }] },
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{ legend:{display:true, labels:{color:'#8fa898',font:{size:11},boxWidth:12}} } }
+    });
+  }
+
+  function renderRouteCharts() {
+    const weeks = ['W1','W2','W3','W4','W5','W6','W7','W8'];
+    chartInstances.routeTrend = new Chart(document.getElementById('routeTrendChart'), {
+      type:'line',
+      data:{ labels:weeks, datasets:[
+        { label:'Optimal %', data:[54,57,59,60,61,62,63,62], borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.08)', fill:true, tension:0.4, pointRadius:3 },
+        { label:'Suboptimal %', data:[30,28,26,25,25,24,23,24], borderColor:'#BA7517', backgroundColor:'transparent', tension:0.4, borderDash:[4,3], pointRadius:3 }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true, labels:{color:'#8fa898',font:{size:11},boxWidth:12}} }, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066'}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066'}, min:0, max:80} } }
+    });
+  }
+
+  function renderWarehouseChart() {
+    chartInstances.warehouse = new Chart(document.getElementById('warehouseChart'), {
+      type:'bar',
+      data:{ labels:['Morning','Afternoon','Night'], datasets:[{ label:'Picks / hr', data:[342,298,189], backgroundColor:['#1D9E75','#5DCAA5','#0F6E56'], borderRadius:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066'}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066'}} } }
+    });
+  }
+
+  function renderDemandFullChart() {
+    const weeks = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'];
+    chartInstances.demandFull = new Chart(document.getElementById('demandFullChart'), {
+      type:'line',
+      data:{ labels:weeks, datasets:[
+        { label:'Electronics', data:[420,450,480,510,490,530,560,545,580,620,650,700], borderColor:'#1D9E75', backgroundColor:'transparent', tension:0.4, pointRadius:3 },
+        { label:'FMCG', data:[320,310,330,340,360,380,370,390,410,430,480,520], borderColor:'#378ADD', backgroundColor:'transparent', tension:0.4, pointRadius:3, borderDash:[4,3] },
+        { label:'Apparel', data:[180,200,220,210,190,230,250,280,310,340,420,480], borderColor:'#EF9F27', backgroundColor:'transparent', tension:0.4, pointRadius:3 },
+        { label:'Auto Parts', data:[90,95,88,100,105,98,110,108,115,120,118,125], borderColor:'#D85A30', backgroundColor:'transparent', tension:0.4, pointRadius:3, borderDash:[2,3] }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true, labels:{color:'#8fa898',font:{size:11},boxWidth:12}} }, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066'}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#5a7066'}} } }
+    });
+  }
+
+  // AI Copilot chat
+  const chatResponses = {
+    'delayed': 'I found 23 delayed shipments. The 3 critical ones are:<br>• <b>SHP-8799</b> Mumbai→Kolkata — vehicle breakdown, replacement dispatched<br>• <b>SHP-8879</b> Ahmedabad→Patna — NH48 strike, rerouting in progress<br>• <b>SHP-8841</b> Nagpur→Chandigarh — monsoon weather delay',
+    'stockout': 'Stockout risk analysis for next 30 days:<br>• <b>SKU-C07</b> (FMCG): 94% stockout probability — reorder 2,000 units immediately<br>• <b>SKU-H71</b> (Toys): 88% probability — Diwali demand spike imminent<br>• <b>SKU-B12</b> (Apparel): 61% probability — reorder in next 9 days<br><br>Estimated revenue at risk: <b>₹14.2L</b>',
+    'supplier': 'Highest risk suppliers this week:<br>• <b>SunLogix</b> — 71% risk score. Late on 4/6 last deliveries. Root cause: internal capacity issues. Recommend: source backup vendor.<br>• <b>BharatCargo</b> — 66% risk. Driver shortage reported. Recommend: issue SLA warning.<br>• <b>GlobalShip</b> — 44% risk. Port congestion delays.',
+    'route': "Tomorrow's route optimisation complete:<br>• 312 routes planned · 47 AI reroutes suggested<br>• Estimated fuel savings: <b>₹42,000</b><br>• Top reroute: SHP-8879 via NH27 saves 2.4 hrs vs NH48 (strike active)<br>• Weather alert: Avoid NH4 near Pune — heavy rain 6 AM–2 PM",
+    'cost': 'Weekly cost analysis:<br>• Total logistics cost: <b>₹58.4L</b> (−6.2% vs last week)<br>• Fuel: ₹24.6L · Labour: ₹16.4L · Last-mile: ₹7.8L · Warehousing: ₹9.6L<br>• Cost per unit: <b>₹142</b> (−₹8 vs last month)<br>• AI route optimisation saved ₹4.2L this week',
+    'diwali': 'Diwali demand forecast (Oct 20–Nov 5):<br>• Electronics: <b>+340%</b> demand spike — current stock insufficient by ~6,200 units<br>• Apparel: <b>+280%</b> — order 4,500 units by Sep 30<br>• Toys: <b>+410%</b> — critical restock needed now<br>• FMCG: <b>+180%</b> — manageable with current reorder plan',
+    'default': "I've analysed your supply chain data. I can help with shipment tracking, demand forecasting, inventory optimisation, route planning, supplier risk, delay prediction, fleet monitoring, and cost analytics. Try asking something specific!"
+  };
+
+  function sendChat() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    const chatEl = document.getElementById('chat-messages');
+
+    const userMsg = document.createElement('div');
+    userMsg.style.cssText = 'text-align:right;';
+    userMsg.innerHTML = `<span style="display:inline-block; background:rgba(29,158,117,0.18); border:1px solid rgba(29,158,117,0.25); border-radius:10px; padding:10px 14px; font-size:13px; color:var(--text);">${msg}</span>`;
+    chatEl.appendChild(userMsg);
+    input.value = '';
+
+    setTimeout(() => {
+      const lower = msg.toLowerCase();
+      let reply = chatResponses.default;
+      if (lower.includes('delay') || lower.includes('late')) reply = chatResponses.delayed;
+      else if (lower.includes('stock') || lower.includes('inventory')) reply = chatResponses.stockout;
+      else if (lower.includes('supplier') || lower.includes('risk') || lower.includes('vendor')) reply = chatResponses.supplier;
+      else if (lower.includes('route') || lower.includes('optim')) reply = chatResponses.route;
+      else if (lower.includes('cost') || lower.includes('analyt')) reply = chatResponses.cost;
+      else if (lower.includes('diwali') || lower.includes('festival') || lower.includes('demand')) reply = chatResponses.diwali;
+
+      const botMsg = document.createElement('div');
+      botMsg.innerHTML = `<div style="background:rgba(29,158,117,0.07); border:1px solid rgba(29,158,117,0.14); border-radius:10px; padding:12px 16px; font-size:13px; color:var(--text2); line-height:1.7;">${reply}</div>`;
+      chatEl.appendChild(botMsg);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }, 600);
+
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+
+  function setChatInput(text) {
+    document.getElementById('chat-input').value = text;
+    document.getElementById('chat-input').focus();
+  }
+</script>
+</body>
+</html>

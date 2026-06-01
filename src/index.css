@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #0a0f0d;
+    --bg2: #111714;
+    --bg3: #181f1b;
+    --bg4: #1e2822;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8f0eb;
+    --text2: #8fa898;
+    --text3: #5a7066;
+    --green: #1D9E75;
+    --green2: #5DCAA5;
+    --green3: #9FE1CB;
+    --amber: #BA7517;
+    --amber2: #EF9F27;
+    --red: #D85A30;
+    --red2: #F09595;
+    --blue: #378ADD;
+    --blue2: #85B7EB;
+  }
+
+  body {
+    @apply bg-bg text-text font-sans;
+  }
+}
+
+@layer components {
+  .fade-in {
+    @apply animate-[fadeIn_0.4s_ease-out_forwards];
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-bg;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-bg4 rounded-[3px];
+}
